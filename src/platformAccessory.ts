@@ -92,6 +92,7 @@ export class ProxmoxPlatformAccessory {
 				}
 			}
 		}
+		this.state = state
 		this.service.updateCharacteristic(this.platform.Characteristic.On, state)
 	}
 
@@ -160,6 +161,7 @@ export class ProxmoxPlatformAccessory {
 			}
 		}
 
+		this.state = isOn
 		this.service.updateCharacteristic(this.platform.Characteristic.On, isOn)
 		return isOn
 	}

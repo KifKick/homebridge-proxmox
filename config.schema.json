@@ -1,0 +1,31 @@
+{
+	"pluginAlias": "HomebridgeProxmox",
+	"pluginType": "platform",
+	"singular": true,
+	"schema": {
+		"type": "object",
+		"properties": {
+			"username": {
+				"title": "Proxmox username",
+				"type": "string",
+				"required": true,
+				"default": "root@pam",
+				"description": "Username used to log-in into proxmox dashboard, example: root@pam"
+			},
+			"password": {
+				"title": "Proxmox password",
+				"type": "string",
+				"required": true,
+				"default": "",
+				"description": "Password used to log-in into proxmox dashboard"
+			},
+			"host": {
+				"title": "Proxmox host address",
+				"type": "string",
+				"required": true,
+				"default": "localhost",
+				"description": "Host to proxmox"
+			}
+		}
+	}
+}

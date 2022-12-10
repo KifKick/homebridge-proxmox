@@ -55,7 +55,7 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 			const lxcs = await theNode.lxc.$get()
 			for (const lxc of lxcs) {
 				const config = await theNode.lxc.$(lxc.vmid).config.$get()
-				this.registerDevice(lxc, config, node.nod)
+				this.registerDevice(lxc, config, node.node)
 			}
 		}
 	}
@@ -86,7 +86,7 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 		// A real plugin you would discover accessories from the local network, cloud services
 		// or a user-defined array in the platform config.
 
-		const uuid = this.api.hap.uuid.generate(`${vm.vmid}${config.name}`)
+		const uuid = this.api.hap.uuid.generate(`${vm.vmid}${config.node}`)
 		const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid)
 
 		if (existingAccessory) {
@@ -100,16 +100,16 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 
 		} else {
 			// the accessory does not yet exist, so we need to create it
-			this.log.info('Adding new accessory:', config.name)
+			this.log.info('Adding new accessory:', config.node)
 
 			// create a new accessory
-			const accessory = new this.api.platformAccessory(config.name as string, uuid)
+			const accessory = new this.api.platformAccessory(config.node as string, uuid)
 
 			// store a copy of the device object in the `accessory.context`
 			// the `context` property can be used to store any data about the accessory you may need
 			accessory.context.device = {
 				vmId: vm.vmid,
-				vmName: config.name,
+				vmName: config.node,
 				nodeName,
 			}
 

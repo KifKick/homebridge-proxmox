@@ -24,10 +24,17 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 		public readonly config: PlatformConfig,
 		public readonly api: API,
 	) {
+
+		// authorize self signed cert if you do not use a valid SSL certificat
+		if (this.config.ssl) {
+			process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0'
+		}
+
 		this.proxmox = proxmoxApi({ host: this.config.host, password: this.config.password, username: this.config.username })
 		if (this.config.debug) {
 			this.log.debug('Finished initializing platform')
 		}
+
 
 		// When this event is fired it means Homebridge has restored all cached accessories from disk.
 		// Dynamic Platform plugins should only register new accessories after this event was fired,

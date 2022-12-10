@@ -1,4 +1,5 @@
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge'
+import os from 'node:os'
 
 import { HomebridgeProxmoxPlatform } from './platform'
 
@@ -23,9 +24,9 @@ export class ProxmoxPlatformAccessory {
 
 		// set accessory information
 		this.accessory.getService(this.platform.Service.AccessoryInformation)!
-			.setCharacteristic(this.platform.Characteristic.Manufacturer, 'Default-Manufacturer')
-			.setCharacteristic(this.platform.Characteristic.Model, 'Default-Model')
-			.setCharacteristic(this.platform.Characteristic.SerialNumber, 'Default-Serial')
+			.setCharacteristic(this.platform.Characteristic.Manufacturer, os.hostname())
+			.setCharacteristic(this.platform.Characteristic.Model, os.platform())
+			.setCharacteristic(this.platform.Characteristic.SerialNumber, os.release())
 
 		// get the Switch service if it exists, otherwise create a new Switch service
 		// you can create multiple services for each accessory
@@ -50,11 +51,13 @@ export class ProxmoxPlatformAccessory {
 	 */
 	async setOn(value: CharacteristicValue) {
 		const bool = value as boolean
+		this.switchState(bool).catch(() => {
+			throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		})
+		throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+	}
 
-		if (this.platform.config.debug) {
-			this.platform.log.debug(`setOn current boolean value: ${bool}`)
-		}
-
+	private async switchState(state: boolean) {
 		const context: {
 			vmId: number; vmName: string; nodeName: string;
 		} = this.accessory.context.device
@@ -68,7 +71,7 @@ export class ProxmoxPlatformAccessory {
 			for (const qemu of qemus) {
 				// do some suff.
 				if (qemu.vmid === context.vmId && node.node === context.nodeName) {
-					if (bool) {
+					if (state) {
 						await theNode.qemu.$(qemu.vmid).status.start.$post()
 					} else {
 						await theNode.qemu.$(qemu.vmid).status.stop.$post()
@@ -80,7 +83,7 @@ export class ProxmoxPlatformAccessory {
 			const lxcs = await theNode.lxc.$get()
 			for (const lxc of lxcs) {
 				if (lxc.vmid === context.vmId && node.node === context.nodeName) {
-					if (bool) {
+					if (state) {
 						await theNode.lxc.$(lxc.vmid).status.start.$post()
 					} else {
 						await theNode.lxc.$(lxc.vmid).status.stop.$post()
@@ -89,9 +92,7 @@ export class ProxmoxPlatformAccessory {
 				}
 			}
 		}
-		this.state = bool
-
-		this.platform.log.debug('Set Characteristic On ->', bool)
+		this.service.updateCharacteristic(this.platform.Characteristic.On, state)
 	}
 
 	/**
@@ -107,9 +108,20 @@ export class ProxmoxPlatformAccessory {
 	 * @example
 	 * this.service.updateCharacteristic(this.platform.Characteristic.On, true)
 	 */
-	async getOn(): Promise<CharacteristicValue> {
+	getOn(): CharacteristicValue {
+		// if you need to return an error to show the device as "Not Responding" in the Home app:
+		// throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		this.fetchState().catch(() => {
+			throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		})
+		return this.state
+	}
 
-		let isOn = this.state
+	/**
+	 * Return state async and set it
+	 */
+	private async fetchState() {
+		let isOn = false
 
 		const context: {
 			vmId: number; vmName: string; nodeName: string;
@@ -148,11 +160,7 @@ export class ProxmoxPlatformAccessory {
 			}
 		}
 
-		this.platform.log.debug('Get Characteristic On ->', isOn)
-
-		// if you need to return an error to show the device as "Not Responding" in the Home app:
-		// throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
-
+		this.service.updateCharacteristic(this.platform.Characteristic.On, isOn)
 		return isOn
 	}
 }

@@ -25,7 +25,9 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 		public readonly api: API,
 	) {
 		this.proxmox = proxmoxApi({ host: this.config.host, password: this.config.password, username: this.config.username })
-		this.log.debug('Finished initializing platform')
+		if (this.config.debug) {
+			this.log.debug('Finished initializing platform')
+		}
 
 		// When this event is fired it means Homebridge has restored all cached accessories from disk.
 		// Dynamic Platform plugins should only register new accessories after this event was fired,

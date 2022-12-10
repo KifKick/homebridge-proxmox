@@ -63,8 +63,7 @@ export class ProxmoxPlatformAccessory {
 			// iterate Qemu VMS
 			for (const qemu of qemus) {
 				// do some suff.
-				const config = await theNode.qemu.$(qemu.vmid).config.$get()
-				if (qemu.vmid === context.vmId && config.node === context.vmName && node.node === context.nodeName) {
+				if (qemu.vmid === context.vmId && node.node === context.nodeName) {
 					if (bool) {
 						await theNode.qemu.$(qemu.vmid).status.stop.$post()
 					} else {
@@ -76,8 +75,7 @@ export class ProxmoxPlatformAccessory {
 
 			const lxcs = await theNode.lxc.$get()
 			for (const lxc of lxcs) {
-				const config = await theNode.lxc.$(lxc.vmid).config.$get()
-				if (lxc.vmid === context.vmId && config.node === context.vmName && node.node === context.nodeName) {
+				if (lxc.vmid === context.vmId && node.node === context.nodeName) {
 					if (bool) {
 						await theNode.lxc.$(lxc.vmid).status.stop.$post()
 					} else {
@@ -121,8 +119,7 @@ export class ProxmoxPlatformAccessory {
 			// iterate Qemu VMS
 			for (const qemu of qemus) {
 				// do some suff.
-				const config = await theNode.qemu.$(qemu.vmid).config.$get()
-				if (qemu.vmid === context.vmId && config.node === context.vmName && node.node === context.nodeName) {
+				if (qemu.vmid === context.vmId && node.node === context.nodeName) {
 					const response = await theNode.qemu.$(qemu.vmid).status.current.$get()
 					if (response.status === 'stopped') {
 						isOn = false
@@ -135,8 +132,7 @@ export class ProxmoxPlatformAccessory {
 
 			const lxcs = await theNode.lxc.$get()
 			for (const lxc of lxcs) {
-				const config = await theNode.lxc.$(lxc.vmid).config.$get()
-				if (lxc.vmid === context.vmId && config.node === context.vmName && node.node === context.nodeName) {
+				if (lxc.vmid === context.vmId && node.node === context.nodeName) {
 					const response = await theNode.lxc.$(lxc.vmid).status.current.$get()
 					if (response.status === 'stopped') {
 						isOn = false

@@ -48,14 +48,14 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 			// iterate Qemu VMS
 			for (const qemu of qemus) {
 				// do some suff.
-				const config = await theNode.qemu.$(qemu.vmid).config.$get()
-				this.registerDevice(qemu, config, node.node)
+				const status = await theNode.qemu.$(qemu.vmid).status.current.$get()
+				this.registerDevice(qemu, status.name as string, node.node)
 			}
 
 			const lxcs = await theNode.lxc.$get()
 			for (const lxc of lxcs) {
-				const config = await theNode.lxc.$(lxc.vmid).config.$get()
-				this.registerDevice(lxc, config, node.node)
+				const status = await theNode.lxc.$(lxc.vmid).status.current.$get()
+				this.registerDevice(lxc, status.name as string, node.node)
 			}
 		}
 	}
@@ -78,7 +78,7 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 	 */
 	registerDevice(
 		vm: Proxmox.nodesQemuVm | Proxmox.nodesLxcVm,
-		config: Proxmox.nodesQemuConfigVmConfig | Proxmox.nodesLxcConfigVmConfig,
+		name: string,
 		nodeName: string,
 	) {
 
@@ -86,7 +86,7 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 		// A real plugin you would discover accessories from the local network, cloud services
 		// or a user-defined array in the platform config.
 
-		const uuid = this.api.hap.uuid.generate(`${vm.vmid}${config.node}`)
+		const uuid = this.api.hap.uuid.generate(`${vm.vmid}${name}`)
 		const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid)
 
 		if (existingAccessory) {
@@ -100,16 +100,16 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 
 		} else {
 			// the accessory does not yet exist, so we need to create it
-			this.log.info('Adding new accessory:', config.node)
+			this.log.info('Adding new accessory:', name)
 
 			// create a new accessory
-			const accessory = new this.api.platformAccessory(config.node as string, uuid)
+			const accessory = new this.api.platformAccessory(name, uuid)
 
 			// store a copy of the device object in the `accessory.context`
 			// the `context` property can be used to store any data about the accessory you may need
 			accessory.context.device = {
 				vmId: vm.vmid,
-				vmName: config.node,
+				vmName: name,
 				nodeName,
 			}
 

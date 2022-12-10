@@ -25,6 +25,13 @@
 				"required": true,
 				"default": "localhost",
 				"description": "Host to proxmox"
+			},
+			"debug": {
+				"title": "Debug enables",
+				"type": "boolean",
+				"required": true,
+				"default": false,
+				"description": "Show debug messages"
 			}
 		}
 	}

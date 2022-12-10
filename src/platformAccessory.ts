@@ -51,6 +51,10 @@ export class ProxmoxPlatformAccessory {
 	async setOn(value: CharacteristicValue) {
 		const bool = value as boolean
 
+		if (this.platform.config.debug) {
+			this.platform.log.debug(`setOn current boolean value: ${bool}`)
+		}
+
 		const context: {
 			vmId: number; vmName: string; nodeName: string;
 		} = this.accessory.context.device
@@ -65,9 +69,9 @@ export class ProxmoxPlatformAccessory {
 				// do some suff.
 				if (qemu.vmid === context.vmId && node.node === context.nodeName) {
 					if (bool) {
-						await theNode.qemu.$(qemu.vmid).status.stop.$post()
-					} else {
 						await theNode.qemu.$(qemu.vmid).status.start.$post()
+					} else {
+						await theNode.qemu.$(qemu.vmid).status.stop.$post()
 					}
 					break
 				}
@@ -77,9 +81,9 @@ export class ProxmoxPlatformAccessory {
 			for (const lxc of lxcs) {
 				if (lxc.vmid === context.vmId && node.node === context.nodeName) {
 					if (bool) {
-						await theNode.lxc.$(lxc.vmid).status.stop.$post()
-					} else {
 						await theNode.lxc.$(lxc.vmid).status.start.$post()
+					} else {
+						await theNode.lxc.$(lxc.vmid).status.stop.$post()
 					}
 					break
 				}

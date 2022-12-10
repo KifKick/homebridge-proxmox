@@ -52,7 +52,7 @@ export class ProxmoxPlatformAccessory {
 		const bool = value as boolean
 
 		const context: {
-			vmId: number; vmName: string; nodeName: string
+			vmId: number; vmName: string; nodeName: string;
 		} = this.accessory.context.device
 
 		for (const node of this.platform.nodes) {
@@ -110,7 +110,7 @@ export class ProxmoxPlatformAccessory {
 		let isOn = this.state
 
 		const context: {
-			vmId: number; vmName: string; nodeName: string
+			vmId: number; vmName: string; nodeName: string;
 		} = this.accessory.context.device
 
 		for (const node of this.platform.nodes) {

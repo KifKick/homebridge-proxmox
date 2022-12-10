@@ -43,6 +43,10 @@ export class ProxmoxPlatformAccessory {
 		this.service.getCharacteristic(this.platform.Characteristic.On)
 			.onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
 			.onGet(this.getOn.bind(this))               // GET - bind to the `getOn` method below
+
+		setInterval(() => {
+			this.fetchState()
+		}, 10 * 1000)
 	}
 
 	/**

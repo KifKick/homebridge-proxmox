@@ -31,9 +31,7 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 		}
 
 		this.proxmox = proxmoxApi({ host: this.config.host, password: this.config.password, username: this.config.username })
-		if (this.config.debug) {
-			this.log.debug('Finished initializing platform')
-		}
+		if (this.config.debug) this.log.debug('Finished initializing platform')
 
 
 		// When this event is fired it means Homebridge has restored all cached accessories from disk.
@@ -44,7 +42,7 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 			// run the method to discover / register your devices as accessories
 			this.nodes = await this.proxmox.nodes.$get()
 			await this.setup()
-			log.debug('Executed didFinishLaunching callback')
+			if (this.config.debug) this.log.debug('Executed didFinishLaunching callback')
 		})
 	}
 

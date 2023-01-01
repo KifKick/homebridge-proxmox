@@ -44,9 +44,9 @@ export class ProxmoxPlatformAccessory {
 			.onSet(this.setOn.bind(this))                // SET - bind to the `setOn` method below
 			.onGet(this.getOn.bind(this))               // GET - bind to the `getOn` method below
 
-		setInterval(() => {
+		/* setInterval(() => {
 			this.fetchState()
-		}, 10 * 1000)
+		}, 10 * 1000) */
 	}
 
 	/**
@@ -55,6 +55,7 @@ export class ProxmoxPlatformAccessory {
 	 */
 	async setOn(value: CharacteristicValue) {
 		const bool = value as boolean
+		if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} setOn: ${bool}`)
 		this.switchState(bool).catch(() => {
 			throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
 		})
@@ -65,6 +66,7 @@ export class ProxmoxPlatformAccessory {
 		const context: {
 			vmId: number; vmName: string; nodeName: string;
 		} = this.accessory.context.device
+		let switched = false
 
 		for (const node of this.platform.nodes) {
 			const theNode = this.platform.proxmox.nodes.$(node.node)
@@ -80,6 +82,7 @@ export class ProxmoxPlatformAccessory {
 					} else {
 						await theNode.qemu.$(qemu.vmid).status.stop.$post()
 					}
+					switched = true
 					break
 				}
 			}
@@ -92,12 +95,17 @@ export class ProxmoxPlatformAccessory {
 					} else {
 						await theNode.lxc.$(lxc.vmid).status.stop.$post()
 					}
+					switched = true
 					break
 				}
 			}
 		}
-		this.state = state
-		this.service.updateCharacteristic(this.platform.Characteristic.On, state)
+
+		if (switched) {
+			this.state = state
+			this.service.updateCharacteristic(this.platform.Characteristic.On, state)
+			if (this.platform.config.debug) this.platform.log.debug(`switchState success and current state is: ${state}`)
+		}
 	}
 
 	/**
@@ -116,6 +124,7 @@ export class ProxmoxPlatformAccessory {
 	getOn(): CharacteristicValue {
 		// if you need to return an error to show the device as "Not Responding" in the Home app:
 		// throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} getOn`)
 		this.fetchState().catch(() => {
 			throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
 		})
@@ -165,6 +174,7 @@ export class ProxmoxPlatformAccessory {
 			}
 		}
 
+		if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} fetchState: ${isOn}`)
 		this.state = isOn
 		this.service.updateCharacteristic(this.platform.Characteristic.On, isOn)
 		return isOn

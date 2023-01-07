@@ -1,11 +1,7 @@
-
-<p align="center">
-
-<img src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png" width="150">
-<img src="https://www.proxmox.com/images/proxmox/Proxmox-logo.png">
-
-
-</p>
+<div align="center" text-align="center">
+	<img style="display: inline-block; margin-left: auto; margin-right: auto; height: 60px;" border="0" alt="Mail" src="https://github.com/homebridge/branding/raw/master/logos/homebridge-wordmark-logo-vertical.png"/>
+    <img style="display: inline-block; margin-left: auto; margin-right: auto; height: 60px;" border="0" alt="Facebook" src="https://www.proxmox.com/images/proxmox/Proxmox-logo.png"/>
+</div>
 
 
 # Homebridge Proxmox plugin

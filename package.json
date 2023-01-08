@@ -28,7 +28,7 @@
 		"proxmox"
 	],
 	"dependencies": {
-		"proxmox-api": "0.4.2"
+		"proxmox-api": "1.0.0"
 	},
 	"devDependencies": {
 		"@types/node": "18.11.18",

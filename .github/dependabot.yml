@@ -13,6 +13,8 @@ updates:
     open-pull-requests-limit: 30
     labels:
       - npm
+    ignore:
+      - dependency-name: "proxmox-api"
 
   - package-ecosystem: github-actions
     open-pull-requests-limit: 30

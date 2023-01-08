@@ -28,7 +28,7 @@
 		"proxmox"
 	],
 	"dependencies": {
-		"proxmox-api": "1.0.0",
+		"proxmox-api": "0.4.2",
 		"homebridge": "1.6.0"
 	},
 	"devDependencies": {

@@ -16,11 +16,33 @@ export class ProxmoxPlatformAccessory {
 	 * You should implement your own code to track the state of your accessory
 	 */
 	private state = false
+	private context: {
+		vmId: number
+		vmName: string
+		nodeName: string
+		isQemu: boolean
+		isLxc: boolean
+	}
+
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	private qemu: any
+	// eslint-disable-next-line @typescript-eslint/no-explicit-any
+	private lxc: any
 
 	constructor(
 		private readonly platform: HomebridgeProxmoxPlatform,
 		private readonly accessory: PlatformAccessory,
 	) {
+
+		const context = this.accessory.context.device
+		this.context = {
+			vmId: context.vmId,
+			vmName: context.vmName,
+			nodeName: context.vmName,
+			isQemu: context.isQemu,
+			isLxc: context.isLxc,
+		}
+		this.setup()
 
 		// set accessory information
 		this.accessory.getService(this.platform.Service.AccessoryInformation)!
@@ -34,7 +56,7 @@ export class ProxmoxPlatformAccessory {
 
 		// set the service name, this is what is displayed as the default name on the Home app
 		// in this example we are using the name we stored in the `accessory.context` in the `discoverDevices` method.
-		this.service.setCharacteristic(this.platform.Characteristic.Name, accessory.context.device.vmName)
+		this.service.setCharacteristic(this.platform.Characteristic.Name, this.context.vmName)
 
 		// each service must implement at-minimum the "required characteristics" for the given service type
 		// see https://developers.homebridge.io/#/service/Switch
@@ -47,6 +69,36 @@ export class ProxmoxPlatformAccessory {
 		/* setInterval(() => {
 			this.fetchState()
 		}, 10 * 1000) */
+	}
+
+	private async setup() {
+		for (const node of this.platform.nodes) {
+			const theNode = this.platform.proxmox.nodes.$(node.node)
+
+			if (this.context.isQemu) {
+				// list Qemu VMS
+				const qemus = await theNode.qemu.$get({ full: true })
+
+				// iterate Qemu VMS
+				for (const qemu of qemus) {
+					if (qemu.vmid === this.context.vmId && node.node === this.context.nodeName) {
+						this.qemu = theNode.qemu.$(this.context.vmId)
+					}
+				}
+			}
+
+			if (this.context.isLxc) {
+				// list Lxc VMS
+				const lxcs = await theNode.lxc.$get()
+
+				for (const lxc of lxcs) {
+					if (lxc.vmid === this.context.vmId && node.node === this.context.nodeName) {
+						this.lxc = theNode.lxc.$(this.context.vmId)
+					}
+				}
+			}
+
+		}
 	}
 
 	/**
@@ -63,42 +115,18 @@ export class ProxmoxPlatformAccessory {
 	}
 
 	private async switchState(state: boolean) {
-		const context: {
-			vmId: number; vmName: string; nodeName: string;
-		} = this.accessory.context.device
 		let switched = false
 
-		for (const node of this.platform.nodes) {
-			const theNode = this.platform.proxmox.nodes.$(node.node)
-			// list Qemu VMS
-			const qemus = await theNode.qemu.$get({ full: true })
+		if (this.context.isQemu) {
+			if (state) await this.qemu.status.start.$post()
+			else await this.qemu.status.stop.$post()
+			switched = true
+		}
 
-			// iterate Qemu VMS
-			for (const qemu of qemus) {
-				// do some suff.
-				if (qemu.vmid === context.vmId && node.node === context.nodeName) {
-					if (state) {
-						await theNode.qemu.$(qemu.vmid).status.start.$post()
-					} else {
-						await theNode.qemu.$(qemu.vmid).status.stop.$post()
-					}
-					switched = true
-					break
-				}
-			}
-
-			const lxcs = await theNode.lxc.$get()
-			for (const lxc of lxcs) {
-				if (lxc.vmid === context.vmId && node.node === context.nodeName) {
-					if (state) {
-						await theNode.lxc.$(lxc.vmid).status.start.$post()
-					} else {
-						await theNode.lxc.$(lxc.vmid).status.stop.$post()
-					}
-					switched = true
-					break
-				}
-			}
+		if (this.context.isLxc) {
+			if (state) await this.lxc.status.start.$post()
+			else await this.lxc.status.stop.$post()
+			switched = true
 		}
 
 		if (switched) {
@@ -136,42 +164,22 @@ export class ProxmoxPlatformAccessory {
 	 */
 	private async fetchState() {
 		let isOn = false
+		let status = ''
 
-		const context: {
-			vmId: number; vmName: string; nodeName: string;
-		} = this.accessory.context.device
+		if (this.context.isQemu) {
+			const res = await this.qemu.status.current.$get()
+			status = res.status
+		}
 
-		for (const node of this.platform.nodes) {
-			const theNode = this.platform.proxmox.nodes.$(node.node)
-			// list Qemu VMS
-			const qemus = await theNode.qemu.$get({ full: true })
+		if (this.context.isLxc) {
+			const res = await this.lxc.status.current.$get()
+			status = res.tatus
+		}
 
-			// iterate Qemu VMS
-			for (const qemu of qemus) {
-				// do some suff.
-				if (qemu.vmid === context.vmId && node.node === context.nodeName) {
-					const response = await theNode.qemu.$(qemu.vmid).status.current.$get()
-					if (response.status === 'stopped') {
-						isOn = false
-					} else {
-						isOn = true
-					}
-					break
-				}
-			}
-
-			const lxcs = await theNode.lxc.$get()
-			for (const lxc of lxcs) {
-				if (lxc.vmid === context.vmId && node.node === context.nodeName) {
-					const response = await theNode.lxc.$(lxc.vmid).status.current.$get()
-					if (response.status === 'stopped') {
-						isOn = false
-					} else {
-						isOn = true
-					}
-					break
-				}
-			}
+		if (status === 'stopped') {
+			isOn = false
+		} else {
+			isOn = true
 		}
 
 		if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} fetchState: ${isOn}`)

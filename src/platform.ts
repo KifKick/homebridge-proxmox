@@ -56,13 +56,13 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 			for (const qemu of qemus) {
 				// do some suff.
 				const status = await theNode.qemu.$(qemu.vmid).status.current.$get()
-				this.registerDevice(qemu, status.name as string, node.node)
+				this.registerDevice(qemu, status.name as string, node.node, true, false)
 			}
 
 			const lxcs = await theNode.lxc.$get()
 			for (const lxc of lxcs) {
 				const status = await theNode.lxc.$(lxc.vmid).status.current.$get()
-				this.registerDevice(lxc, status.name as string, node.node)
+				this.registerDevice(lxc, status.name as string, node.node, false, true)
 			}
 		}
 	}
@@ -87,6 +87,8 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 		vm: Proxmox.nodesQemuVm | Proxmox.nodesLxcVm,
 		name: string,
 		nodeName: string,
+		isQemu = false,
+		isLxc = false,
 	) {
 
 		// EXAMPLE ONLY
@@ -118,6 +120,8 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 				vmId: vm.vmid,
 				vmName: name,
 				nodeName,
+				isQemu,
+				isLxc,
 			}
 
 			// create the accessory handler for the newly create accessory

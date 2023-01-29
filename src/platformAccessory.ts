@@ -25,9 +25,7 @@ export class ProxmoxPlatformAccessory {
 	}
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private qemu: any
-	// eslint-disable-next-line @typescript-eslint/no-explicit-any
-	private lxc: any
+	private node: any
 
 	constructor(
 		private readonly platform: HomebridgeProxmoxPlatform,
@@ -82,7 +80,7 @@ export class ProxmoxPlatformAccessory {
 				// iterate Qemu VMS
 				for (const qemu of qemus) {
 					if (qemu.vmid === this.context.vmId && node.node === this.context.nodeName) {
-						this.qemu = theNode.qemu.$(this.context.vmId)
+						this.node = theNode
 					}
 				}
 			}
@@ -93,7 +91,7 @@ export class ProxmoxPlatformAccessory {
 
 				for (const lxc of lxcs) {
 					if (lxc.vmid === this.context.vmId && node.node === this.context.nodeName) {
-						this.lxc = theNode.lxc.$(this.context.vmId)
+						this.node = theNode
 					}
 				}
 			}
@@ -118,14 +116,14 @@ export class ProxmoxPlatformAccessory {
 		let switched = false
 
 		if (this.context.isQemu) {
-			if (state) await this.qemu.status.start.$post()
-			else await this.qemu.status.stop.$post()
+			if (state) await this.node.qemu.$(this.context.vmId).status.start.$post()
+			else await this.node.qemu.$(this.context.vmId).status.stop.$post()
 			switched = true
 		}
 
 		if (this.context.isLxc) {
-			if (state) await this.lxc.status.start.$post()
-			else await this.lxc.status.stop.$post()
+			if (state) await this.node.lxc.$(this.context.vmId).status.start.$post()
+			else await this.node.lxc.$(this.context.vmId).status.stop.$post()
 			switched = true
 		}
 
@@ -167,12 +165,12 @@ export class ProxmoxPlatformAccessory {
 		let status = ''
 
 		if (this.context.isQemu) {
-			const res = await this.qemu.status.current.$get()
+			const res = await this.node.qemu.$(this.context.vmId).status.current.$get()
 			status = res.status
 		}
 
 		if (this.context.isLxc) {
-			const res = await this.lxc.status.current.$get()
+			const res = await this.node.lxc.$(this.context.vmId).status.current.$get()
 			status = res.tatus
 		}
 

@@ -1,7 +1,7 @@
 {
 	"displayName": "Homebridge Proxmox",
 	"name": "homebridge-proxmox",
-	"version": "1.0.13",
+	"version": "1.0.15",
 	"description": "Simple switch for Proxmox QEMU/LXC nodes",
 	"license": "Apache-2.0",
 	"repository": {

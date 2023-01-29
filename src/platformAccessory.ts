@@ -1,3 +1,4 @@
+/* eslint-disable no-empty */
 /* eslint-disable max-len */
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge'
 import os from 'node:os'

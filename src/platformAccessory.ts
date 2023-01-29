@@ -182,7 +182,8 @@ export class ProxmoxPlatformAccessory {
 			isOn = true
 		}
 
-		if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} fetchState: ${isOn}`)
+		// eslint-disable-next-line max-len
+		if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} fetchState: status is ${status}, state is: ${isOn}`)
 		this.state = isOn
 		this.service.updateCharacteristic(this.platform.Characteristic.On, isOn)
 		return isOn

@@ -87,8 +87,8 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 		vm: Proxmox.nodesQemuVm | Proxmox.nodesLxcVm,
 		name: string,
 		nodeName: string,
-		isQemu = false,
-		isLxc = false,
+		isQemu: boolean,
+		isLxc: boolean,
 	) {
 
 		// EXAMPLE ONLY

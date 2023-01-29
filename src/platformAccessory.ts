@@ -1,3 +1,4 @@
+/* eslint-disable max-len */
 import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge'
 import os from 'node:os'
 
@@ -26,6 +27,8 @@ export class ProxmoxPlatformAccessory {
 
 	// eslint-disable-next-line @typescript-eslint/no-explicit-any
 	private node: any
+	private isNodeReady = false
+	private lastUpdateDate: Date
 
 	constructor(
 		private readonly platform: HomebridgeProxmoxPlatform,
@@ -36,10 +39,14 @@ export class ProxmoxPlatformAccessory {
 		this.context = {
 			vmId: context.vmId,
 			vmName: context.vmName,
-			nodeName: context.vmName,
+			nodeName: context.nodeName,
 			isQemu: context.isQemu,
 			isLxc: context.isLxc,
 		}
+		const date = new Date()
+		date.setSeconds(date.getSeconds() - 11)
+		this.lastUpdateDate = date
+
 		this.setup()
 
 		// set accessory information
@@ -72,26 +79,35 @@ export class ProxmoxPlatformAccessory {
 	private async setup() {
 		for (const node of this.platform.nodes) {
 			const theNode = this.platform.proxmox.nodes.$(node.node)
+			//console.log(node.node)
 
 			if (this.context.isQemu) {
+				if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} SETUP isQemu`)
+				//console.log(this.context)
 				// list Qemu VMS
 				const qemus = await theNode.qemu.$get({ full: true })
 
 				// iterate Qemu VMS
 				for (const qemu of qemus) {
 					if (qemu.vmid === this.context.vmId && node.node === this.context.nodeName) {
+						if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} SETUP isQemu -> found correct qemu`)
 						this.node = theNode
+						this.isNodeReady = true
 					}
 				}
 			}
 
 			if (this.context.isLxc) {
+				if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} SETUP isLxc`)
+				//console.log(this.context)
 				// list Lxc VMS
 				const lxcs = await theNode.lxc.$get()
 
 				for (const lxc of lxcs) {
 					if (lxc.vmid === this.context.vmId && node.node === this.context.nodeName) {
+						if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} SETUP isLxc -> found correct lxc`)
 						this.node = theNode
+						this.isNodeReady = true
 					}
 				}
 			}
@@ -106,31 +122,37 @@ export class ProxmoxPlatformAccessory {
 	async setOn(value: CharacteristicValue) {
 		const bool = value as boolean
 		if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} setOn: ${bool}`)
-		this.switchState(bool).catch(() => {
-			throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
-		})
-		throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		this.lastUpdateDate = new Date()
+		this.switchState(bool)
 	}
 
 	private async switchState(state: boolean) {
+		if (!this.isNodeReady) return
 		let switched = false
 
 		if (this.context.isQemu) {
-			if (state) await this.node.qemu.$(this.context.vmId).status.start.$post()
-			else await this.node.qemu.$(this.context.vmId).status.stop.$post()
-			switched = true
+			try {
+				if (state) await this.node.qemu.$(this.context.vmId).status.start.$post()
+				else await this.node.qemu.$(this.context.vmId).status.stop.$post()
+				switched = true
+			} catch (error) { }
+
+
 		}
 
 		if (this.context.isLxc) {
-			if (state) await this.node.lxc.$(this.context.vmId).status.start.$post()
-			else await this.node.lxc.$(this.context.vmId).status.stop.$post()
-			switched = true
+			try {
+				if (state) await this.node.lxc.$(this.context.vmId).status.start.$post()
+				else await this.node.lxc.$(this.context.vmId).status.stop.$post()
+				switched = true
+			} catch (error) { }
+
 		}
 
 		if (switched) {
 			this.state = state
 			this.service.updateCharacteristic(this.platform.Characteristic.On, state)
-			if (this.platform.config.debug) this.platform.log.debug(`switchState success and current state is: ${state}`)
+			if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} switchState success and current state is: ${state}`)
 		}
 	}
 
@@ -150,6 +172,8 @@ export class ProxmoxPlatformAccessory {
 	getOn(): CharacteristicValue {
 		// if you need to return an error to show the device as "Not Responding" in the Home app:
 		// throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
+		if (Math.abs((new Date().getTime() - this.lastUpdateDate.getTime()) / 1000) < 10) return this.state
+
 		if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} getOn`)
 		this.fetchState().catch(() => {
 			throw new this.platform.api.hap.HapStatusError(this.platform.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE)
@@ -161,6 +185,9 @@ export class ProxmoxPlatformAccessory {
 	 * Return state async and set it
 	 */
 	private async fetchState() {
+		if (!this.isNodeReady) return false
+		if (Math.abs((new Date().getTime() - this.lastUpdateDate.getTime()) / 1000) < 10) return this.state
+
 		let isOn = false
 		let status = ''
 
@@ -171,12 +198,13 @@ export class ProxmoxPlatformAccessory {
 
 		if (this.context.isLxc) {
 			const res = await this.node.lxc.$(this.context.vmId).status.current.$get()
-			status = res.tatus
+			status = res.status
 		}
 
 		if (status === 'stopped') {
 			isOn = false
-		} else {
+		}
+		if (status === 'running') {
 			isOn = true
 		}
 

@@ -4,6 +4,7 @@ import { Service, PlatformAccessory, CharacteristicValue } from 'homebridge'
 import os from 'node:os'
 
 import { HomebridgeProxmoxPlatform } from './platform'
+import { PLUGIN_NAME, PLATFORM_NAME } from './settings'
 
 /**
  * Platform Accessory
@@ -88,9 +89,9 @@ export class ProxmoxPlatformAccessory {
 				// list Qemu VMS
 				const qemus = await theNode.qemu.$get({ full: true })
 
-				// iterate Qemu VMS
-				for (const qemu of qemus) {
-					if (qemu.vmid === this.context.vmId && node.node === this.context.nodeName) {
+				if (node.node === this.context.nodeName) {
+					const found = qemus.find(x => x.vmid === this.context.vmId && node.node === this.context.nodeName) !== undefined
+					if (found) {
 						if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} SETUP isQemu -> found correct qemu`)
 						this.node = theNode
 						this.isNodeReady = true
@@ -104,8 +105,9 @@ export class ProxmoxPlatformAccessory {
 				// list Lxc VMS
 				const lxcs = await theNode.lxc.$get()
 
-				for (const lxc of lxcs) {
-					if (lxc.vmid === this.context.vmId && node.node === this.context.nodeName) {
+				if (node.node === this.context.nodeName) {
+					const found = lxcs.find(x => x.vmid === this.context.vmId) !== undefined
+					if (found) {
 						if (this.platform.config.debug) this.platform.log.debug(`${this.accessory.displayName} SETUP isLxc -> found correct lxc`)
 						this.node = theNode
 						this.isNodeReady = true
@@ -113,6 +115,9 @@ export class ProxmoxPlatformAccessory {
 				}
 			}
 
+			if (!this.isNodeReady) {
+				this.platform.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.accessory])
+			}
 		}
 	}
 

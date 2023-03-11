@@ -31,7 +31,7 @@
 				"type": "boolean",
 				"required": true,
 				"default": false,
-				"description": "Authorize self signed cert if you do not use a valid SSL certificat"
+				"description": "Authorize self signed cert if you do not use a valid SSL certificat (mostly you need to check it when you're using proxmox locally)"
 			},
 			"debug": {
 				"title": "Debug enables",

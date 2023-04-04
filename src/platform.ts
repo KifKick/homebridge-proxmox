@@ -71,8 +71,12 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 	 * This function is invoked when homebridge restores cached accessories from disk at startup.
 	 * It should be used to setup event handlers for characteristics and update respective values.
 	 */
-	// eslint-disable-next-line @typescript-eslint/no-empty-function, @typescript-eslint/no-unused-vars
-	configureAccessory(accessory: PlatformAccessory) { }
+	configureAccessory(accessory: PlatformAccessory) {
+		this.log.info('Loading accessory from cache:', accessory.displayName)
+
+		// add the restored accessory to the accessories cache so we can track if it has already been registered
+		this.accessories.push(accessory)
+	}
 
 	/**
 	 * This is an example method showing how to register discovered accessories.
@@ -92,28 +96,40 @@ export class HomebridgeProxmoxPlatform implements DynamicPlatformPlugin {
 		// or a user-defined array in the platform config.
 
 		const uuid = this.api.hap.uuid.generate(`${vm.vmid}${name}`)
+		const existingAccessory = this.accessories.find(accessory => accessory.UUID === uuid)
 
-		// the accessory does not yet exist, so we need to create it
-		this.log.info('Registering accessory:', name)
+		if (existingAccessory) {
+			// the accessory already exists
+			this.log.info('Restoring existing accessory from cache:', existingAccessory.displayName)
 
-		// create a new accessory
-		const accessory = new this.api.platformAccessory(name, uuid)
+			// create the accessory handler for the restored accessory
+			// this is imported from `platformAccessory.ts`
+			new ProxmoxPlatformAccessory(this, existingAccessory)
 
-		// store a copy of the device object in the `accessory.context`
-		// the `context` property can be used to store any data about the accessory you may need
-		accessory.context.device = {
-			vmId: vm.vmid,
-			vmName: name,
-			nodeName,
-			isQemu,
-			isLxc,
+
+		} else {
+			// the accessory does not yet exist, so we need to create it
+			this.log.info('Adding new accessory:', name)
+
+			// create a new accessory
+			const accessory = new this.api.platformAccessory(name, uuid)
+
+			// store a copy of the device object in the `accessory.context`
+			// the `context` property can be used to store any data about the accessory you may need
+			accessory.context.device = {
+				vmId: vm.vmid,
+				vmName: name,
+				nodeName,
+				isQemu,
+				isLxc,
+			}
+
+			// create the accessory handler for the newly create accessory
+			// this is imported from `platformAccessory.ts`
+			new ProxmoxPlatformAccessory(this, accessory)
+
+			// link the accessory to your platform
+			this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory])
 		}
-
-		// create the accessory handler for the newly create accessory
-		// this is imported from `platformAccessory.ts`
-		new ProxmoxPlatformAccessory(this, accessory)
-
-		// link the accessory to your platform
-		this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [accessory])
 	}
 }

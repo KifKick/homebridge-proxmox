@@ -39,6 +39,6 @@
 		"rimraf": "5.0.0",
 		"ts-node": "10.9.1",
 		"typescript": "5.0.4",
-		"homebridge": "1.6.0"
+		"homebridge": "1.6.1"
 	}
 }
